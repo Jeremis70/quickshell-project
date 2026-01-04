@@ -7,4 +7,5 @@ Scope {
 	VolumeOSD {}
 	MicOSD {}
 	BrightnessOSD {}
+	KeyboardBacklightOSD {}
 }

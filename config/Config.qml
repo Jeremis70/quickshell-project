@@ -156,6 +156,49 @@ QtObject {
         })
     }
 
+    readonly property QtObject keyboardBacklight: QtObject {
+        // Window/layout
+        readonly property int panelWidth: 75
+        readonly property int panelHeight: 75
+
+        // Theme overrides
+        property color bg: root.theme.panelBg
+        property color windowColor: root.theme.windowPanelColor
+
+        // Placement overrides
+        property int  autoHideDelayMs: 1000
+        property real posX: 0.5
+        property real posY: 0.7
+        property string enterFrom: root.placement.osdEnterFrom
+        property int offscreenPx: root.placement.osdOffscreenPx
+
+        // Motion overrides (keyboard backlight is fade by default)
+        property string animMode: "fade"
+        property int slideDurationMs: root.motion.slideDurationMs
+        property int slideEasingOpen: root.motion.slideEasingOpen
+        property int slideEasingClose: root.motion.slideEasingClose
+        property int fadeDurationMs: 350
+        property int fadeEasing: root.motion.fadeEasing
+        property real opacityShown: 1.0
+        property real opacityHidden: 0.0
+
+        // Sysfs backlight paths (override per machine)
+        // Example: "/sys/class/backlight/amdgpu_bl1/brightness"
+        property string brightnessPath: "/sys/class/leds/tpacpi::kbd_backlight/brightness"
+        property string maxBrightnessPath: "/sys/class/leds/tpacpi::kbd_backlight/max_brightness"
+
+
+        // Icons
+        readonly property int iconSize: 40
+        readonly property string iconFontFamily: "Segoe Fluent Icons"
+        // State keys are defined by the OSD QML (currently: muted/unmuted)
+        readonly property var icons: ({
+            off: "keyboard-backlight-off",
+            low: "keyboard-backlight-low",
+            high: "keyboard-backlight-high"
+        })
+    }
+
     readonly property QtObject brightness: QtObject {
         // Window/layout
         readonly property int panelWidth: 200
@@ -196,6 +239,11 @@ QtObject {
         // Brightness behavior
         readonly property real exponentK: 4.0
         property int minPercent: 10
+
+        // Sysfs backlight paths (override per machine)
+        // Example: "/sys/class/backlight/amdgpu_bl1/brightness"
+        property string brightnessPath: "/sys/class/backlight/intel_backlight/brightness"
+        property string maxBrightnessPath: "/sys/class/backlight/intel_backlight/max_brightness"
 
         // Icons
         readonly property int iconSize: 18

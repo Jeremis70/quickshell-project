@@ -122,7 +122,7 @@ Scope {
 
     FileView {
         id: maxBrightnessFile
-        path: "/sys/class/backlight/intel_backlight/max_brightness"
+        path: Config.brightness.maxBrightnessPath
         preload: true
         blockLoading: false
         watchChanges: false
@@ -131,7 +131,7 @@ Scope {
 
     FileView {
         id: curBrightnessFile
-        path: "/sys/class/backlight/intel_backlight/brightness"
+        path: Config.brightness.brightnessPath
         preload: true
         blockLoading: false
         watchChanges: true
