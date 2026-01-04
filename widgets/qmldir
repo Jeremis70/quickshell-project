@@ -1,0 +1,4 @@
+module Components
+SmartIcon 1.0 SmartIcon.qml
+OsdWindow 1.0 OsdWindow.qml
+OsdSlider 1.0 OsdSlider.qml
