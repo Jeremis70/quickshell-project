@@ -3,6 +3,7 @@ import Quickshell
 import "battery"
 import "volume"
 import "brightness"
+import "task_switcher"
 
 Scope {
 	VolumeOSD {}
@@ -10,4 +11,5 @@ Scope {
 	PowerSourceOSD {}
 	BrightnessOSD {}
 	KeyboardBacklightOSD {}
+	TaskSwitcher {}
 }
