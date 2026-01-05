@@ -10,6 +10,7 @@ Scope {
 
     // -1 = unknown/uninitialized, 0 = battery, 1 = AC
     property int lastOnline: -1
+    property bool initialized: false
 
     function _readIntFromFileView(fv) {
         var s = (fv ? fv.text() : "").trim()
@@ -19,12 +20,25 @@ Scope {
 
     function updateOnlineAndMaybeShow() {
         var onlineRaw = _readIntFromFileView(onlineFile)
-        if (onlineRaw < 0) return
+        if (onlineRaw < 0) {
+            if (!powerSourceOsd.initialized) {
+                powerSourceOsd.lastOnline = -1
+                powerSourceOsd.initialized = true
+                return
+            }
+
+            if (powerSourceOsd.lastOnline !== -1) {
+                powerSourceOsd.lastOnline = -1
+                osdWin.show()
+            }
+            return
+        }
 
         var online = onlineRaw > 0 ? 1 : 0
 
-        if (powerSourceOsd.lastOnline === -1) {
+        if (!powerSourceOsd.initialized) {
             powerSourceOsd.lastOnline = online
+            powerSourceOsd.initialized = true
             return
         }
 
@@ -40,7 +54,6 @@ Scope {
         repeat: true
         onTriggered: {
             onlineFile.reload()
-            powerSourceOsd.updateOnlineAndMaybeShow()
         }
     }
 
@@ -95,7 +108,9 @@ Scope {
                     color: Config.theme.textColor
                     icons: Config.powerSource.icons
 
-                    state: (powerSourceOsd.lastOnline > 0) ? "ac" : "no_ac"
+                    state: (powerSourceOsd.lastOnline === -1)
+                        ? "unknown"
+                        : ((powerSourceOsd.lastOnline > 0) ? "ac" : "no_ac")
                 }
             }
         }

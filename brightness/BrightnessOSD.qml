@@ -140,7 +140,6 @@ Scope {
 
         onFileChanged: {
             this.reload()
-            brightnessOsd.updateBrightnessAndMaybeShow()
         }
     }
 

@@ -238,7 +238,8 @@ QtObject {
         readonly property int iconSize: 40
         readonly property var icons: ({
             ac: "power_ac_on",
-            no_ac: "power_ac_off"
+            no_ac: "power_ac_off",
+            unknown: "dialog-question"
         })
     }
 

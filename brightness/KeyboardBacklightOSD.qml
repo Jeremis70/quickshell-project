@@ -86,7 +86,6 @@ function updateBrightnessAndMaybeShow() {
             // force resync
             curBrightnessFile.reload()
             maxBrightnessFile.reload()
-            keyboardBacklightOsd.updateBrightnessAndMaybeShow()
         }
     }
 
@@ -98,7 +97,6 @@ function updateBrightnessAndMaybeShow() {
             // force refresh to avoid stale reads
             curBrightnessFile.reload()
             maxBrightnessFile.reload()
-            keyboardBacklightOsd.updateBrightnessAndMaybeShow()
         }
     }
 
