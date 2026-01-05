@@ -34,6 +34,7 @@ Scope {
         id: osdWin
 
         autoHideDelayMs: Config.mic.autoHideDelayMs
+        hoverPausesAutoHide: Config.mic.hoverPausesAutoHide
 
         posX: Config.mic.posX
         posY: Config.mic.posY

@@ -33,6 +33,7 @@ Scope {
         id: osdWin
 
         autoHideDelayMs: Config.volume.autoHideDelayMs
+        hoverPausesAutoHide: Config.volume.hoverPausesAutoHide
 
         posX: Config.volume.posX
         posY: Config.volume.posY

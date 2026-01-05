@@ -148,6 +148,7 @@ Scope {
         id: osdWin
 
         autoHideDelayMs: Config.brightness.autoHideDelayMs
+        hoverPausesAutoHide: Config.brightness.hoverPausesAutoHide
 
         posX: Config.brightness.posX
         posY: Config.brightness.posY

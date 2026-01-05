@@ -82,6 +82,7 @@ QtObject {
 
         // Motion / placement overrides
         property int  autoHideDelayMs: root.motion.autoHideDelayMs
+        property bool hoverPausesAutoHide: true
         property real posX: root.placement.osdPosX
         property real posY: root.placement.osdPosY
         property string enterFrom: root.placement.osdEnterFrom
@@ -132,6 +133,7 @@ QtObject {
 
         // Placement overrides
         property int  autoHideDelayMs: 1000
+        property bool hoverPausesAutoHide: true
         property real posX: 0.5
         property real posY: 0.7
         property string enterFrom: root.placement.osdEnterFrom
@@ -167,6 +169,7 @@ QtObject {
 
         // Placement overrides
         property int  autoHideDelayMs: 1000
+        property bool hoverPausesAutoHide: true
         property real posX: 0.5
         property real posY: 0.7
         property string enterFrom: root.placement.osdEnterFrom
@@ -199,6 +202,46 @@ QtObject {
         })
     }
 
+    readonly property QtObject powerSource: QtObject {
+        // Window/layout
+        readonly property int panelWidth: 75
+        readonly property int panelHeight: 75
+
+        // Theme overrides
+        property color bg: root.theme.panelBg
+        property color windowColor: root.theme.windowPanelColor
+
+        // Placement overrides
+        property int  autoHideDelayMs: 1000
+        property bool hoverPausesAutoHide: false
+        property real posX: 0.5
+        property real posY: 0.7
+        property string enterFrom: root.placement.osdEnterFrom
+        property int offscreenPx: root.placement.osdOffscreenPx
+
+        // Motion overrides (power source is fade by default)
+        property string animMode: "fade"
+        property int slideDurationMs: root.motion.slideDurationMs
+        property int slideEasingOpen: root.motion.slideEasingOpen
+        property int slideEasingClose: root.motion.slideEasingClose
+        property int fadeDurationMs: 350
+        property int fadeEasing: root.motion.fadeEasing
+        property real opacityShown: 1.0
+        property real opacityHidden: 0.0
+
+        // Sysfs power supply path (override per machine)
+        // Example: "/sys/class/power_supply/AC/online"
+        property string onlinePath: "/sys/class/power_supply/AC/online"
+        property int pollIntervalMs: 250
+
+        // Icons
+        readonly property int iconSize: 40
+        readonly property var icons: ({
+            ac: "power_ac_on",
+            no_ac: "power_ac_off"
+        })
+    }
+
     readonly property QtObject brightness: QtObject {
         // Window/layout
         readonly property int panelWidth: 200
@@ -212,6 +255,7 @@ QtObject {
 
         // Motion / placement overrides
         property int  autoHideDelayMs: root.motion.autoHideDelayMs
+        property bool hoverPausesAutoHide: true
         property real posX: root.placement.osdPosX
         property real posY: root.placement.osdPosY
         property string enterFrom: root.placement.osdEnterFrom

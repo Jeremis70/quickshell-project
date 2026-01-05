@@ -124,6 +124,7 @@ function updateBrightnessAndMaybeShow() {
         id: osdWin
 
         autoHideDelayMs: Config.keyboardBacklight.autoHideDelayMs
+        hoverPausesAutoHide: Config.keyboardBacklight.hoverPausesAutoHide
 
         posX: Config.keyboardBacklight.posX
         posY: Config.keyboardBacklight.posY

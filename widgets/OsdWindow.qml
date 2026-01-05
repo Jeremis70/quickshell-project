@@ -24,6 +24,8 @@ Scope {
 
 	// Auto-hide
 	property int autoHideDelayMs: 2500
+	// Auto-hide / hover behavior
+	property bool hoverPausesAutoHide: true
 
 	// Animation config
 	property string animMode: "slide" // slide|fade|slide+fade
@@ -42,7 +44,7 @@ Scope {
 		wantOpen = true
 		keepAlive = true
 
-		if (hovering) {
+		if (hoverPausesAutoHide && hovering) {
 			hideTimer.stop()
 		} else {
 			hideTimer.restart()
@@ -233,11 +235,11 @@ Scope {
 				acceptedButtons: Qt.NoButton
 				onEntered: {
 					osd.hovering = true
-					hideTimer.stop()
+					if (osd.hoverPausesAutoHide) hideTimer.stop()
 				}
 				onExited: {
 					osd.hovering = false
-					if (osd.wantOpen) hideTimer.restart()
+					if (osd.hoverPausesAutoHide && osd.wantOpen) hideTimer.restart()
 				}
 			}
 		}
