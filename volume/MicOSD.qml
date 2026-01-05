@@ -14,6 +14,12 @@ Scope {
     }
 
     property bool audioReady: false
+    property var audioObj: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio : null
+
+    function volume01() {
+        var s = watcher.current
+        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0
+    }
 
     Timer {
         interval: Config.motion.audioReadyDelayMs
@@ -22,12 +28,43 @@ Scope {
         onTriggered: micOsd.audioReady = true
     }
 
+    W.OsdWatcher {
+        id: watcher
+        osdWindow: osdWin
+
+        normalizeFn: function(state) {
+            if (!state) return state
+            return {
+                volumeQ: Math.round((state.volume ?? 0) * 1000),
+                muted: !!state.muted
+            }
+        }
+
+        sampleFn: function() {
+            var a = micOsd.audioObj
+            if (!a) return undefined
+            return { volume: a.volume ?? 0, muted: !!a.muted }
+        }
+    }
+
+    onAudioReadyChanged: {
+        if (!audioReady) return
+        watcher.reset()
+        watcher.ingestSample()
+    }
+
+    onAudioObjChanged: {
+        if (!micOsd.audioReady) return
+        watcher.reset()
+        watcher.ingestSample()
+    }
+
     Connections {
-        target: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio : null
+        target: micOsd.audioObj
         ignoreUnknownSignals: true
 
-        function onVolumeChanged() { if (micOsd.audioReady) osdWin.show() }
-        function onMutedChanged()  { if (micOsd.audioReady) osdWin.show() }
+        function onVolumeChanged() { if (micOsd.audioReady) watcher.ingestSample() }
+        function onMutedChanged()  { if (micOsd.audioReady) watcher.ingestSample() }
     }
 
     W.OsdWindow {
@@ -78,19 +115,23 @@ Scope {
                     icons: Config.mic.icons
 
                     state: {
-                        var a = Pipewire.defaultAudioSource?.audio
-                        if (!a) return "muted"
-                        return a.muted ? "muted" : "unmuted"
+                        var s = watcher.current
+                        if (!s) return "muted"
+                        return s.muted ? "muted" : "unmuted"
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            var a = Pipewire.defaultAudioSource?.audio
-                            if (a) {
-                                a.muted = !a.muted
-                            }
+                            var a = micOsd.audioObj
+                            if (!a) return
+
+                            var nextMuted = !a.muted
+                            a.muted = nextMuted
+
+                            if (!micOsd.audioReady) return
+                            watcher.ingestOptimistic({ volume: micOsd.volume01(), muted: nextMuted })
                         }
                     }
                 }

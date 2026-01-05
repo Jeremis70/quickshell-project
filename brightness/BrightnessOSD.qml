@@ -8,8 +8,18 @@ import "../widgets" as W
 Scope {
     id: brightnessOsd
 
-    // "User-facing" percent (same as brightnessctl -eK): 0..100
-    property int lastBrightnessPercent: -1
+    W.OsdWatcher {
+        id: watcher
+        osdWindow: osdWin
+
+        sampleFn: function() {
+            var cur = watcher.readIntFromFileView(curBrightnessFile)
+            var max = watcher.readIntFromFileView(maxBrightnessFile)
+            if (cur === undefined || max === undefined || max <= 0) return undefined
+
+            return brightnessOsd._percentFromRaw(cur, max)
+        }
+    }
 
     // When user changes brightness via slider, ignore sysfs echo for a short time
     property bool userAdjusting: false
@@ -67,17 +77,8 @@ Scope {
         return clampReal(ui01, 0.0, 1.0)
     }
 
-    function updateBrightnessAndMaybeShow() {
-        var cur = _readIntFromFileView(curBrightnessFile)
-        var max = _readIntFromFileView(maxBrightnessFile)
-        if (cur < 0 || max <= 0) return
-
-        var pct = _percentFromRaw(cur, max)
-
-        if (!userAdjusting && lastBrightnessPercent !== -1 && pct !== lastBrightnessPercent) {
-            osdWin.show()
-        }
-        lastBrightnessPercent = pct
+    function ingestFromFiles() {
+        watcher.ingestSample({ suppressShow: brightnessOsd.userAdjusting })
     }
 
     function brightnessBucketKey(pct) {
@@ -107,8 +108,7 @@ Scope {
         userAdjusting = true
         userAdjustCooldown.restart()
 
-        lastBrightnessPercent = realPct
-        osdWin.show()
+        watcher.ingest(realPct)
 
         brightnessSetProc.command = [
             "brightnessctl",
@@ -126,7 +126,7 @@ Scope {
         preload: true
         blockLoading: false
         watchChanges: false
-        onLoaded: brightnessOsd.updateBrightnessAndMaybeShow()
+        onLoaded: brightnessOsd.ingestFromFiles()
     }
 
     FileView {
@@ -136,10 +136,10 @@ Scope {
         blockLoading: false
         watchChanges: true
 
-        onLoaded: brightnessOsd.updateBrightnessAndMaybeShow()
+        onLoaded: brightnessOsd.ingestFromFiles()
 
         onFileChanged: {
-            this.reload()
+            watcher.requestReload(this)
         }
     }
 
@@ -189,7 +189,7 @@ Scope {
                     icons: Config.brightness.icons
 
                     state: {
-                        var pct = brightnessOsd.lastBrightnessPercent
+                        var pct = (watcher.current === undefined) ? -1 : watcher.current
                         return brightnessOsd.brightnessBucketKey(pct)
                     }
                 }
@@ -208,9 +208,9 @@ Scope {
                     animDurationMs: Config.motion.fillAnimDurationMs
                     animEasing: Config.motion.fillEasing
 
-                    value: (brightnessOsd.lastBrightnessPercent < 0)
+                    value: (watcher.current === undefined)
                         ? 0
-                        : brightnessOsd.realToUi(brightnessOsd.lastBrightnessPercent)
+                        : brightnessOsd.realToUi(watcher.current)
 
                     onUserChanged: function(newValue) {
                         var realPct = brightnessOsd.uiToRealPercent(newValue)
@@ -231,7 +231,7 @@ Scope {
                     Layout.preferredWidth: brightnessMetrics.width
                     Layout.minimumWidth: brightnessMetrics.width
 
-                    text: (brightnessOsd.lastBrightnessPercent < 0) ? 0 : brightnessOsd.lastBrightnessPercent
+                    text: (watcher.current === undefined) ? 0 : watcher.current
                     font.pixelSize: Config.brightness.textFontSize
                     font.family: osdWin.textFamily
                     color: Config.theme.textColor

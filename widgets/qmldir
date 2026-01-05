@@ -2,3 +2,5 @@ module Components
 SmartIcon 1.0 SmartIcon.qml
 OsdWindow 1.0 OsdWindow.qml
 OsdSlider 1.0 OsdSlider.qml
+OsdWatcher 1.0 OsdWatcher.qml
+singleton OsdManager 1.0 OsdManager.qml

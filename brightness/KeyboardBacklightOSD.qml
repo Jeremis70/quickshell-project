@@ -8,8 +8,18 @@ import "../widgets" as W
 Scope {
     id: keyboardBacklightOsd
 
-    property int lastBrightness: -1
-    property int maxBrightness: 0
+    W.OsdWatcher {
+        id: watcher
+        osdWindow: osdWin
+
+        sampleFn: function() {
+            var maxRaw = watcher.readIntFromFileView(maxBrightnessFile)
+            var curRaw = watcher.readIntFromFileView(curBrightnessFile)
+            if (maxRaw === undefined || curRaw === undefined || maxRaw <= 0) return undefined
+
+            return { cur: curRaw, max: maxRaw }
+        }
+    }
 
     property bool userAdjusting: false
     property int pendingLevel: -1
@@ -19,7 +29,7 @@ Scope {
     }
 
 function setKeyboardBacklight(level) {
-    var max = keyboardBacklightOsd.maxBrightness
+    var max = watcher.current ? watcher.current.max : 0
     if (max <= 0) return
 
     level = Math.max(0, Math.min(level, max))
@@ -29,8 +39,7 @@ function setKeyboardBacklight(level) {
 
     adjustTimeout.restart()
 
-    keyboardBacklightOsd.lastBrightness = level
-    osdWin.show()
+    watcher.ingest({ cur: level, max: max })
 
     setProc.command = [
         "sh", "-lc",
@@ -39,40 +48,21 @@ function setKeyboardBacklight(level) {
     setProc.running = true
 }
 
+    function ingestFromFiles() {
+        var state = watcher.sampleFn ? watcher.sampleFn() : undefined
+        if (state === undefined) return
 
-    function _readIntFromFileView(fv) {
-        var s = (fv ? fv.text() : "").trim()
-        var n = parseInt(s, 10)
-        return isNaN(n) ? -1 : n
-    }
-
-function updateBrightnessAndMaybeShow() {
-    var maxRaw = _readIntFromFileView(maxBrightnessFile)
-    var curRaw = _readIntFromFileView(curBrightnessFile)
-
-    if (maxRaw <= 0 || curRaw < 0) return
-
-    keyboardBacklightOsd.maxBrightness = maxRaw
-
-    if (keyboardBacklightOsd.userAdjusting) {
-        if (curRaw === keyboardBacklightOsd.pendingLevel) {
+        // While adjusting, ignore sysfs echo unless it matches the pending level.
+        if (keyboardBacklightOsd.userAdjusting) {
+            if (state.cur !== keyboardBacklightOsd.pendingLevel) return
             keyboardBacklightOsd.userAdjusting = false
             keyboardBacklightOsd.pendingLevel = -1
-            keyboardBacklightOsd.lastBrightness = curRaw
+            watcher.ingest(state, { suppressShow: true })
+            return
         }
-        return
-    }
 
-    if (keyboardBacklightOsd.lastBrightness === -1) {
-        keyboardBacklightOsd.lastBrightness = curRaw
-        return
+        watcher.ingest(state)
     }
-
-    if (keyboardBacklightOsd.lastBrightness !== curRaw) {
-        keyboardBacklightOsd.lastBrightness = curRaw
-        osdWin.show()
-    }
-}
 
 
     // Polling is the reliable way for sysfs LEDs
@@ -84,8 +74,8 @@ function updateBrightnessAndMaybeShow() {
             keyboardBacklightOsd.userAdjusting = false
             keyboardBacklightOsd.pendingLevel = -1
             // force resync
-            curBrightnessFile.reload()
-            maxBrightnessFile.reload()
+            watcher.requestReload(curBrightnessFile)
+            watcher.requestReload(maxBrightnessFile)
         }
     }
 
@@ -95,8 +85,8 @@ function updateBrightnessAndMaybeShow() {
         repeat: true
         onTriggered: {
             // force refresh to avoid stale reads
-            curBrightnessFile.reload()
-            maxBrightnessFile.reload()
+            watcher.requestReload(curBrightnessFile)
+            watcher.requestReload(maxBrightnessFile)
         }
     }
 
@@ -106,7 +96,7 @@ function updateBrightnessAndMaybeShow() {
         preload: true
         blockLoading: false
         watchChanges: false
-        onLoaded: keyboardBacklightOsd.updateBrightnessAndMaybeShow()
+        onLoaded: keyboardBacklightOsd.ingestFromFiles()
     }
 
     FileView {
@@ -115,7 +105,7 @@ function updateBrightnessAndMaybeShow() {
         preload: true
         blockLoading: false
         watchChanges: false
-        onLoaded: keyboardBacklightOsd.updateBrightnessAndMaybeShow()
+        onLoaded: keyboardBacklightOsd.ingestFromFiles()
     }
 
     W.OsdWindow {
@@ -162,8 +152,8 @@ function updateBrightnessAndMaybeShow() {
                     icons: Config.keyboardBacklight.icons
 
                     state: {
-                        var cur = keyboardBacklightOsd.lastBrightness
-                        var max = keyboardBacklightOsd.maxBrightness
+                        var cur = watcher.current ? watcher.current.cur : 0
+                        var max = watcher.current ? watcher.current.max : 0
 
                         if (cur <= 0) return "off"
                         if (cur < max) return "low"
@@ -174,8 +164,8 @@ function updateBrightnessAndMaybeShow() {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            var cur = keyboardBacklightOsd.lastBrightness
-                            var max = keyboardBacklightOsd.maxBrightness
+                            var cur = watcher.current ? watcher.current.cur : 0
+                            var max = watcher.current ? watcher.current.max : 0
 
                             if (max <= 0) return
 

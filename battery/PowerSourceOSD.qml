@@ -8,43 +8,14 @@ import "../widgets" as W
 Scope {
     id: powerSourceOsd
 
-    // -1 = unknown/uninitialized, 0 = battery, 1 = AC
-    property int lastOnline: -1
-    property bool initialized: false
+    W.OsdWatcher {
+        id: watcher
+        osdWindow: osdWin
 
-    function _readIntFromFileView(fv) {
-        var s = (fv ? fv.text() : "").trim()
-        var n = parseInt(s, 10)
-        return isNaN(n) ? -1 : n
-    }
-
-    function updateOnlineAndMaybeShow() {
-        var onlineRaw = _readIntFromFileView(onlineFile)
-        if (onlineRaw < 0) {
-            if (!powerSourceOsd.initialized) {
-                powerSourceOsd.lastOnline = -1
-                powerSourceOsd.initialized = true
-                return
-            }
-
-            if (powerSourceOsd.lastOnline !== -1) {
-                powerSourceOsd.lastOnline = -1
-                osdWin.show()
-            }
-            return
-        }
-
-        var online = onlineRaw > 0 ? 1 : 0
-
-        if (!powerSourceOsd.initialized) {
-            powerSourceOsd.lastOnline = online
-            powerSourceOsd.initialized = true
-            return
-        }
-
-        if (powerSourceOsd.lastOnline !== online) {
-            powerSourceOsd.lastOnline = online
-            osdWin.show()
+        sampleFn: function() {
+            var raw = watcher.readIntFromFileView(onlineFile)
+            if (raw === undefined) return -1
+            return raw > 0 ? 1 : 0
         }
     }
 
@@ -53,7 +24,7 @@ Scope {
         running: true
         repeat: true
         onTriggered: {
-            onlineFile.reload()
+            watcher.requestReload(onlineFile)
         }
     }
 
@@ -63,7 +34,7 @@ Scope {
         preload: true
         blockLoading: false
         watchChanges: false
-        onLoaded: powerSourceOsd.updateOnlineAndMaybeShow()
+        onLoaded: watcher.ingestSample()
     }
 
     W.OsdWindow {
@@ -108,9 +79,9 @@ Scope {
                     color: Config.theme.textColor
                     icons: Config.powerSource.icons
 
-                    state: (powerSourceOsd.lastOnline === -1)
+                    state: (watcher.current === -1)
                         ? "unknown"
-                        : ((powerSourceOsd.lastOnline > 0) ? "ac" : "no_ac")
+                        : ((watcher.current > 0) ? "ac" : "no_ac")
                 }
             }
         }

@@ -41,6 +41,7 @@ Scope {
 	property real opacityHidden: 0.0
 
 	function show() {
+		OsdManager.requestShow(osd)
 		wantOpen = true
 		keepAlive = true
 
@@ -54,6 +55,9 @@ Scope {
 	function hide() {
 		wantOpen = false
 	}
+
+	Component.onCompleted: OsdManager.registerWindow(osd)
+	Component.onDestruction: OsdManager.unregisterWindow(osd)
 
 	// Internal state
 	property bool wantOpen: false

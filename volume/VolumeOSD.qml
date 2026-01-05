@@ -14,6 +14,12 @@ Scope {
     }
 
     property bool audioReady: false
+    property var audioObj: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
+
+    function volume01() {
+        var s = watcher.current
+        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0
+    }
 
     Timer {
         interval: Config.motion.audioReadyDelayMs
@@ -22,11 +28,44 @@ Scope {
         onTriggered: volumeOsd.audioReady = true
     }
 
+    W.OsdWatcher {
+        id: watcher
+        osdWindow: osdWin
+
+        // PipeWire can produce small float noise; quantize before comparing.
+        normalizeFn: function(state) {
+            if (!state) return state
+            return {
+                volumeQ: Math.round((state.volume ?? 0) * 1000),
+                muted: !!state.muted
+            }
+        }
+
+        sampleFn: function() {
+            var a = volumeOsd.audioObj
+            if (!a) return undefined
+            return { volume: a.volume ?? 0, muted: !!a.muted }
+        }
+    }
+
+    onAudioReadyChanged: {
+        if (!audioReady) return
+        watcher.reset()
+        watcher.ingestSample()
+    }
+
+    onAudioObjChanged: {
+        if (!volumeOsd.audioReady) return
+        watcher.reset()
+        watcher.ingestSample()
+    }
+
     Connections {
-        target: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
+        target: volumeOsd.audioObj
         ignoreUnknownSignals: true
-        function onVolumeChanged() { if (volumeOsd.audioReady) osdWin.show() }
-        function onMutedChanged()  { if (volumeOsd.audioReady) osdWin.show() }
+
+        function onVolumeChanged() { if (volumeOsd.audioReady) watcher.ingestSample() }
+        function onMutedChanged()  { if (volumeOsd.audioReady) watcher.ingestSample() }
     }
 
     W.OsdWindow {
@@ -78,10 +117,10 @@ Scope {
                     icons: Config.volume.icons
 
                     state: {
-                        var a = Pipewire.defaultAudioSink?.audio
-                        var v = a?.volume ?? 0
+                        var s = watcher.current
+                        var v = volumeOsd.volume01()
 
-                        if (a?.muted) return "muted"
+                        if (s && s.muted) return "muted"
                         if (v === 0) return "zero"
                         if (v <= Config.volume.iconLowThreshold) return "low"
                         if (v <= Config.volume.iconMediumThreshold) return "medium"
@@ -92,10 +131,14 @@ Scope {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            var a = Pipewire.defaultAudioSink?.audio
+                            var a = volumeOsd.audioObj
                             if (!a) return
-                            a.muted = !a.muted
-                            osdWin.show()
+
+                            var nextMuted = !a.muted
+                            a.muted = nextMuted
+
+                            if (!volumeOsd.audioReady) return
+                            watcher.ingestOptimistic({ volume: volumeOsd.volume01(), muted: nextMuted })
                         }
                     }
                 }
@@ -114,13 +157,15 @@ Scope {
                     animDurationMs: Config.motion.fillAnimDurationMs
                     animEasing: Config.motion.fillEasing
 
-                    value: Pipewire.defaultAudioSink?.audio.volume ?? 0
+                    value: volumeOsd.volume01()
                     onUserChanged: function(newValue) {
-                        var a = Pipewire.defaultAudioSink?.audio
+                        var a = volumeOsd.audioObj
                         if (!a) return
                         a.muted = false
                         a.volume = newValue
-                        osdWin.show()
+
+                        if (!volumeOsd.audioReady) return
+                        watcher.ingestOptimistic({ volume: newValue, muted: false })
                     }
                 }
 
@@ -137,7 +182,7 @@ Scope {
                     Layout.preferredWidth: volumeMetrics.width
                     Layout.minimumWidth: volumeMetrics.width
 
-                    text: Math.round((Pipewire.defaultAudioSink?.audio.volume ?? 0) * 100)
+                    text: Math.round(volumeOsd.volume01() * 100)
                     font.pixelSize: Config.volume.textFontSize
                     font.family: osdWin.textFamily
                     color: Config.theme.textColor
