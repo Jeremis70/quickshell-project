@@ -333,7 +333,8 @@ Scope {
 						id: thumbFlow
 						width: win.panelInnerW
 						implicitHeight: win.thumbLayout.totalH
-						clip: true
+						// Allow selected/hovered thumbnails to lift/zoom beyond their slot.
+						clip: false
 
 						Repeater {
 							model: taskSwitcher.windowsInActiveWorkspace
@@ -346,6 +347,12 @@ Scope {
 								property bool hovered: (taskSwitcher.hoveredAddress && windowData?.address)
 									? (taskSwitcher.hoveredAddress === windowData.address)
 									: false
+
+								// --- Lift/zoom tuning (match WorkspaceSwitcher feel) ---
+								readonly property real targetScale: selected ? 1.045 : (hovered ? 1.020 : 1.0)
+								readonly property real targetZ:     selected ? 200   : (hovered ? 120   : 0)
+
+								Behavior on z { NumberAnimation { duration: 90 } }
 
 							readonly property real localX: SwitcherCommon.windowLocalX(windowData, win.monitorData)
 							readonly property real localY: SwitcherCommon.windowLocalY(windowData, win.monitorData)
@@ -364,44 +371,58 @@ Scope {
 									: 0
 								width: thumbW
 								height: thumbH
-								clip: true
+								// Don't clip: we want the lifted thumbnail to overlap neighbors.
+								clip: false
+								z: targetZ
 
-							RoundedMaskedPreview {
+							// Animated wrapper: lift + zoom content without moving layout slot.
+							Item {
+								id: thumbFx
 								anchors.fill: parent
-								sourceItem: workspaceSource
-								sourceRect: Qt.rect(srcX, srcY, srcW, srcH)
-								radius: Math.max(0, Config.theme.panelRadius - 2)
-								live: taskSwitcher.open
-							}
+								transformOrigin: Item.Center
+								scale: targetScale
 
-							MouseArea {
-								anchors.fill: parent
-								hoverEnabled: true
-								acceptedButtons: Qt.LeftButton
-								cursorShape: Qt.PointingHandCursor
-								onEntered: {
-									if (windowData?.address) taskSwitcher.hoveredAddress = windowData.address
+								Behavior on scale {
+									NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
 								}
-								onExited: {
-									if (taskSwitcher.hoveredAddress === windowData?.address) taskSwitcher.hoveredAddress = ""
-								}
-								onClicked: {
-									// Mouse click focuses but does not change keyboard selection index.
-									taskSwitcher.focusAddressAndClose(windowData?.address)
-								}
-							}
 
-							Rectangle {
-								anchors.fill: parent
-								color: "transparent"
-								radius: Math.max(0, Config.theme.panelRadius - 2)
-								border.width: (selected || hovered) ? 2 : 1
-								border.color: selected
-									? Config.theme.barFill
-									: (hovered
-										? Qt.rgba(Config.theme.textColor.r, Config.theme.textColor.g, Config.theme.textColor.b, 0.55)
-										: Qt.rgba(Config.theme.textColor.r, Config.theme.textColor.g, Config.theme.textColor.b, 0.18))
-								z: 100
+								RoundedMaskedPreview {
+									anchors.fill: parent
+									sourceItem: workspaceSource
+									sourceRect: Qt.rect(srcX, srcY, srcW, srcH)
+									radius: Math.max(0, Config.theme.panelRadius - 2)
+									live: taskSwitcher.open
+								}
+
+								MouseArea {
+									anchors.fill: parent
+									hoverEnabled: true
+									acceptedButtons: Qt.LeftButton
+									cursorShape: Qt.PointingHandCursor
+									onEntered: {
+										if (windowData?.address) taskSwitcher.hoveredAddress = windowData.address
+									}
+									onExited: {
+										if (taskSwitcher.hoveredAddress === windowData?.address) taskSwitcher.hoveredAddress = ""
+									}
+									onClicked: {
+										// Mouse click focuses but does not change keyboard selection index.
+										taskSwitcher.focusAddressAndClose(windowData?.address)
+									}
+								}
+
+								Rectangle {
+									anchors.fill: parent
+									color: "transparent"
+									radius: Math.max(0, Config.theme.panelRadius - 2)
+									border.width: (selected || hovered) ? 2 : 1
+									border.color: selected
+										? Config.theme.barFill
+										: (hovered
+											? Qt.rgba(Config.theme.textColor.r, Config.theme.textColor.g, Config.theme.textColor.b, 0.55)
+											: Qt.rgba(Config.theme.textColor.r, Config.theme.textColor.g, Config.theme.textColor.b, 0.18))
+									z: 100
+								}
 							}
 						}
 					}
