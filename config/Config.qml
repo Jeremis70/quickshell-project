@@ -46,7 +46,7 @@ QtObject {
     readonly property QtObject theme: QtObject {
         // Look/colors
         readonly property color panelBg: "#ff2c2c2c"
-        readonly property color barBg:   "#ff9f9f9f"
+        readonly property color barBg: "#ff9f9f9f"
         readonly property color barFill: "#FF62E0FF"
         readonly property color textColor: "#FFFFFFFF"
         readonly property color windowPanelColor: "transparent"
@@ -81,7 +81,7 @@ QtObject {
         property color windowColor: root.theme.windowPanelColor
 
         // Motion / placement overrides
-        property int  autoHideDelayMs: root.motion.autoHideDelayMs
+        property int autoHideDelayMs: root.motion.autoHideDelayMs
         property bool hoverPausesAutoHide: true
         property real posX: root.placement.osdPosX
         property real posY: root.placement.osdPosY
@@ -114,12 +114,12 @@ QtObject {
         readonly property real iconMediumThreshold: 0.66
 
         readonly property var icons: ({
-            muted: "\uE74F",
-            zero: "\uE992",
-            low: "\uE993",
-            medium: "\uE994",
-            high: "\uE995"
-        })
+                muted: "\uE74F",
+                zero: "\uE992",
+                low: "\uE993",
+                medium: "\uE994",
+                high: "\uE995"
+            })
     }
 
     readonly property QtObject mic: QtObject {
@@ -132,7 +132,7 @@ QtObject {
         property color windowColor: root.theme.windowPanelColor
 
         // Placement overrides
-        property int  autoHideDelayMs: 1000
+        property int autoHideDelayMs: 1000
         property bool hoverPausesAutoHide: true
         property real posX: 0.5
         property real posY: 0.7
@@ -153,9 +153,9 @@ QtObject {
         readonly property int iconSize: 40
         readonly property string iconFontFamily: "Segoe Fluent Icons"
         readonly property var icons: ({
-            muted: "microphone-sensitivity-muted",
-            unmuted: "microphone-sensitivity-high"
-        })
+                muted: "microphone-sensitivity-muted",
+                unmuted: "microphone-sensitivity-high"
+            })
     }
 
     readonly property QtObject keyboardBacklight: QtObject {
@@ -168,7 +168,7 @@ QtObject {
         property color windowColor: root.theme.windowPanelColor
 
         // Placement overrides
-        property int  autoHideDelayMs: 1000
+        property int autoHideDelayMs: 1000
         property bool hoverPausesAutoHide: true
         property real posX: 0.5
         property real posY: 0.7
@@ -190,16 +190,15 @@ QtObject {
         property string brightnessPath: "/sys/class/leds/tpacpi::kbd_backlight/brightness"
         property string maxBrightnessPath: "/sys/class/leds/tpacpi::kbd_backlight/max_brightness"
 
-
         // Icons
         readonly property int iconSize: 40
         readonly property string iconFontFamily: "Segoe Fluent Icons"
         // State keys are defined by the OSD QML (currently: muted/unmuted)
         readonly property var icons: ({
-            off: "keyboard-backlight-off",
-            low: "keyboard-backlight-low",
-            high: "keyboard-backlight-high"
-        })
+                off: "keyboard-backlight-off",
+                low: "keyboard-backlight-low",
+                high: "keyboard-backlight-high"
+            })
     }
 
     readonly property QtObject powerSource: QtObject {
@@ -212,7 +211,7 @@ QtObject {
         property color windowColor: root.theme.windowPanelColor
 
         // Placement overrides
-        property int  autoHideDelayMs: 1000
+        property int autoHideDelayMs: 1000
         property bool hoverPausesAutoHide: false
         property real posX: 0.5
         property real posY: 0.7
@@ -237,10 +236,10 @@ QtObject {
         // Icons
         readonly property int iconSize: 40
         readonly property var icons: ({
-            ac: "power_ac_on",
-            no_ac: "power_ac_off",
-            unknown: "dialog-question"
-        })
+                ac: "power_ac_on",
+                no_ac: "power_ac_off",
+                unknown: "dialog-question"
+            })
     }
 
     readonly property QtObject brightness: QtObject {
@@ -255,7 +254,7 @@ QtObject {
         property color windowColor: root.theme.windowPanelColor
 
         // Motion / placement overrides
-        property int  autoHideDelayMs: root.motion.autoHideDelayMs
+        property int autoHideDelayMs: root.motion.autoHideDelayMs
         property bool hoverPausesAutoHide: true
         property real posX: root.placement.osdPosX
         property real posY: root.placement.osdPosY
@@ -293,14 +292,14 @@ QtObject {
         // Icons
         readonly property int iconSize: 18
         readonly property var icons: ({
-            brightness_1: "display-brightness-1",
-            brightness_2: "display-brightness-2",
-            brightness_3: "display-brightness-3",
-            brightness_4: "display-brightness-4",
-            brightness_5: "display-brightness-5",
-            brightness_6: "display-brightness-6",
-            brightness_7: "display-brightness-7"
-        })
+                brightness_1: "display-brightness-1",
+                brightness_2: "display-brightness-2",
+                brightness_3: "display-brightness-3",
+                brightness_4: "display-brightness-4",
+                brightness_5: "display-brightness-5",
+                brightness_6: "display-brightness-6",
+                brightness_7: "display-brightness-7"
+            })
         readonly property var bucketThresholds: ([15, 30, 45, 60, 75, 90])
     }
 }

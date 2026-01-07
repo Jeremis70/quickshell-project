@@ -12,12 +12,13 @@ Scope {
         id: watcher
         osdWindow: osdWin
 
-        sampleFn: function() {
-            var cur = watcher.readIntFromFileView(curBrightnessFile)
-            var max = watcher.readIntFromFileView(maxBrightnessFile)
-            if (cur === undefined || max === undefined || max <= 0) return undefined
+        sampleFn: function () {
+            var cur = watcher.readIntFromFileView(curBrightnessFile);
+            var max = watcher.readIntFromFileView(maxBrightnessFile);
+            if (cur === undefined || max === undefined || max <= 0)
+                return undefined;
 
-            return brightnessOsd._percentFromRaw(cur, max)
+            return brightnessOsd._percentFromRaw(cur, max);
         }
     }
 
@@ -25,74 +26,89 @@ Scope {
     property bool userAdjusting: false
 
     function _readIntFromFileView(fv) {
-        var s = (fv ? fv.text() : "").trim()
-        var n = parseInt(s, 10)
-        return isNaN(n) ? -1 : n
+        var s = (fv ? fv.text() : "").trim();
+        var n = parseInt(s, 10);
+        return isNaN(n) ? -1 : n;
     }
 
     function clampInt(v, lo, hi) {
-        if (v < lo) return lo
-        if (v > hi) return hi
-        return v
+        if (v < lo)
+            return lo;
+        if (v > hi)
+            return hi;
+        return v;
     }
 
     function clampReal(v, lo, hi) {
-        if (v < lo) return lo
-        if (v > hi) return hi
-        return v
+        if (v < lo)
+            return lo;
+        if (v > hi)
+            return hi;
+        return v;
     }
 
     function _percentFromRaw(cur, max) {
         // pct = (cur/max)^(1/K) * 100
-        var ratio = cur / max
-        ratio = clampReal(ratio, 0.0, 1.0)
+        var ratio = cur / max;
+        ratio = clampReal(ratio, 0.0, 1.0);
 
-        var k = Config.brightness.exponentK
-        if (!(k > 0)) k = 1.0
+        var k = Config.brightness.exponentK;
+        if (!(k > 0))
+            k = 1.0;
 
-        var pct = Math.round(Math.pow(ratio, 1.0 / k) * 100.0)
-        return clampInt(pct, 0, 100)
+        var pct = Math.round(Math.pow(ratio, 1.0 / k) * 100.0);
+        return clampInt(pct, 0, 100);
     }
 
     // Map slider UI (0..1) -> real brightnessctl percent (min..100)
     function uiToRealPercent(ui01) {
-        ui01 = clampReal(ui01, 0.0, 1.0)
+        ui01 = clampReal(ui01, 0.0, 1.0);
 
-        var minP = clampInt(Config.brightness.minPercent, 0, 100)
-        if (minP >= 100) return 100
+        var minP = clampInt(Config.brightness.minPercent, 0, 100);
+        if (minP >= 100)
+            return 100;
 
-        var realPct = minP + ui01 * (100 - minP)
-        return clampInt(Math.round(realPct), minP, 100)
+        var realPct = minP + ui01 * (100 - minP);
+        return clampInt(Math.round(realPct), minP, 100);
     }
 
     // Map real brightnessctl percent (min..100) -> slider UI (0..1)
     function realToUi(realPct) {
-        var minP = clampInt(Config.brightness.minPercent, 0, 100)
-        realPct = clampInt(Math.round(realPct), 0, 100)
+        var minP = clampInt(Config.brightness.minPercent, 0, 100);
+        realPct = clampInt(Math.round(realPct), 0, 100);
 
-        if (minP >= 100) return 1.0
-        if (realPct <= minP) return 0.0
+        if (minP >= 100)
+            return 1.0;
+        if (realPct <= minP)
+            return 0.0;
 
-        var ui01 = (realPct - minP) / (100.0 - minP)
-        return clampReal(ui01, 0.0, 1.0)
+        var ui01 = (realPct - minP) / (100.0 - minP);
+        return clampReal(ui01, 0.0, 1.0);
     }
 
     function ingestFromFiles() {
-        watcher.ingestSample({ suppressShow: brightnessOsd.userAdjusting })
+        watcher.ingestSample({
+            suppressShow: brightnessOsd.userAdjusting
+        });
     }
 
     function brightnessBucketKey(pct) {
-        if (pct < 0) pct = 0
-        var ts = Config.brightness.bucketThresholds
-        if (!ts || ts.length < 1) ts = [15, 30, 45, 60, 75, 90]
+        if (pct < 0)
+            pct = 0;
+        var ts = Config.brightness.bucketThresholds;
+        if (!ts || ts.length < 1)
+            ts = [15, 30, 45, 60, 75, 90];
 
         for (var i = 0; i < ts.length; i++) {
-            if (pct <= ts[i]) return "brightness_" + (i + 1)
+            if (pct <= ts[i])
+                return "brightness_" + (i + 1);
         }
-        return "brightness_" + (ts.length + 1)
+        return "brightness_" + (ts.length + 1);
     }
 
-    Process { id: brightnessSetProc }
+    Process {
+        id: brightnessSetProc
+    }
 
     Timer {
         id: userAdjustCooldown
@@ -102,22 +118,16 @@ Scope {
     }
 
     function setBrightnessPercent(realPct) {
-        var minP = clampInt(Config.brightness.minPercent, 0, 100)
-        realPct = clampInt(Math.round(realPct), minP, 100)
+        var minP = clampInt(Config.brightness.minPercent, 0, 100);
+        realPct = clampInt(Math.round(realPct), minP, 100);
 
-        userAdjusting = true
-        userAdjustCooldown.restart()
+        userAdjusting = true;
+        userAdjustCooldown.restart();
 
-        watcher.ingest(realPct)
+        watcher.ingest(realPct);
 
-        brightnessSetProc.command = [
-            "brightnessctl",
-            "-e" + Math.round(Config.brightness.exponentK),
-            "-n2",
-            "set",
-            realPct + "%"
-        ]
-        brightnessSetProc.running = true
+        brightnessSetProc.command = ["brightnessctl", "-e" + Math.round(Config.brightness.exponentK), "-n2", "set", realPct + "%"];
+        brightnessSetProc.running = true;
     }
 
     FileView {
@@ -139,7 +149,7 @@ Scope {
         onLoaded: brightnessOsd.ingestFromFiles()
 
         onFileChanged: {
-            watcher.requestReload(this)
+            watcher.requestReload(this);
         }
     }
 
@@ -167,9 +177,7 @@ Scope {
         windowHeight: Config.brightness.panelHeight
         windowColor: Config.brightness.windowColor
 
-        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length)
-            ? Config.typography.textFontFamily
-            : Qt.application.font.family
+        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length) ? Config.typography.textFontFamily : Qt.application.font.family
 
         Rectangle {
             anchors.fill: parent
@@ -189,8 +197,8 @@ Scope {
                     icons: Config.brightness.icons
 
                     state: {
-                        var pct = (watcher.current === undefined) ? -1 : watcher.current
-                        return brightnessOsd.brightnessBucketKey(pct)
+                        var pct = (watcher.current === undefined) ? -1 : watcher.current;
+                        return brightnessOsd.brightnessBucketKey(pct);
                     }
                 }
 
@@ -208,13 +216,11 @@ Scope {
                     animDurationMs: Config.motion.fillAnimDurationMs
                     animEasing: Config.motion.fillEasing
 
-                    value: (watcher.current === undefined)
-                        ? 0
-                        : brightnessOsd.realToUi(watcher.current)
+                    value: (watcher.current === undefined) ? 0 : brightnessOsd.realToUi(watcher.current)
 
-                    onUserChanged: function(newValue) {
-                        var realPct = brightnessOsd.uiToRealPercent(newValue)
-                        brightnessOsd.setBrightnessPercent(realPct)
+                    onUserChanged: function (newValue) {
+                        var realPct = brightnessOsd.uiToRealPercent(newValue);
+                        brightnessOsd.setBrightnessPercent(realPct);
                     }
                 }
 

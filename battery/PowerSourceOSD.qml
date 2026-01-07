@@ -12,10 +12,11 @@ Scope {
         id: watcher
         osdWindow: osdWin
 
-        sampleFn: function() {
-            var raw = watcher.readIntFromFileView(onlineFile)
-            if (raw === undefined) return -1
-            return raw > 0 ? 1 : 0
+        sampleFn: function () {
+            var raw = watcher.readIntFromFileView(onlineFile);
+            if (raw === undefined)
+                return -1;
+            return raw > 0 ? 1 : 0;
         }
     }
 
@@ -24,7 +25,7 @@ Scope {
         running: true
         repeat: true
         onTriggered: {
-            watcher.requestReload(onlineFile)
+            watcher.requestReload(onlineFile);
         }
     }
 
@@ -79,9 +80,7 @@ Scope {
                     color: Config.theme.textColor
                     icons: Config.powerSource.icons
 
-                    state: (watcher.current === -1)
-                        ? "unknown"
-                        : ((watcher.current > 0) ? "ac" : "no_ac")
+                    state: (watcher.current === -1) ? "unknown" : ((watcher.current > 0) ? "ac" : "no_ac")
                 }
             }
         }

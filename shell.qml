@@ -7,11 +7,11 @@ import "task_switcher"
 import "workspace_switcher"
 
 Scope {
-	VolumeOSD {}
-	MicOSD {}
-	PowerSourceOSD {}
-	BrightnessOSD {}
-	KeyboardBacklightOSD {}
-	TaskSwitcher {}
-	WorkspaceSwitcher {}
+    VolumeOSD {}
+    MicOSD {}
+    PowerSourceOSD {}
+    BrightnessOSD {}
+    KeyboardBacklightOSD {}
+    TaskSwitcher {}
+    WorkspaceSwitcher {}
 }
