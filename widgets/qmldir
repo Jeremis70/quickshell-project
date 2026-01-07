@@ -4,3 +4,7 @@ OsdWindow 1.0 OsdWindow.qml
 OsdSlider 1.0 OsdSlider.qml
 OsdWatcher 1.0 OsdWatcher.qml
 singleton OsdManager 1.0 OsdManager.qml
+singleton SwitcherCommon 1.0 SwitcherCommon.qml
+RoundedMaskedPreview 1.0 RoundedMaskedPreview.qml
+SwitcherOverlay 1.0 SwitcherOverlay.qml
+PreviewTile 1.0 PreviewTile.qml

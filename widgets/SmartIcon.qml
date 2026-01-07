@@ -61,8 +61,8 @@ Item {
 	// --- Mode image (nom d'icône ou path) ---
 	Image {
 		anchors.fill: parent
-		visible: !root._isGlyph(root._value())
-		source: root._resolvedSource(root._value())
+		visible: root._value().length > 0 && !root._isGlyph(root._value())
+		source: root._value().length > 0 ? root._resolvedSource(root._value()) : ""
 		fillMode: Image.PreserveAspectFit
 		smooth: true
 		mipmap: true

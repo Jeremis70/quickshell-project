@@ -4,6 +4,7 @@ import "battery"
 import "volume"
 import "brightness"
 import "task_switcher"
+import "workspace_switcher"
 
 Scope {
 	VolumeOSD {}
@@ -12,4 +13,5 @@ Scope {
 	BrightnessOSD {}
 	KeyboardBacklightOSD {}
 	TaskSwitcher {}
+	WorkspaceSwitcher {}
 }
