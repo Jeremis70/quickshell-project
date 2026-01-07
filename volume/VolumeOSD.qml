@@ -10,15 +10,15 @@ Scope {
     id: volumeOsd
 
     PwObjectTracker {
-        objects: [ Pipewire.defaultAudioSink ]
+        objects: [Pipewire.defaultAudioSink]
     }
 
     property bool audioReady: false
     property var audioObj: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
 
     function volume01() {
-        var s = watcher.current
-        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0
+        var s = watcher.current;
+        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0;
     }
 
     Timer {
@@ -33,39 +33,52 @@ Scope {
         osdWindow: osdWin
 
         // PipeWire can produce small float noise; quantize before comparing.
-        normalizeFn: function(state) {
-            if (!state) return state
+        normalizeFn: function (state) {
+            if (!state)
+                return state;
             return {
                 volumeQ: Math.round((state.volume ?? 0) * 1000),
                 muted: !!state.muted
-            }
+            };
         }
 
-        sampleFn: function() {
-            var a = volumeOsd.audioObj
-            if (!a) return undefined
-            return { volume: a.volume ?? 0, muted: !!a.muted }
+        sampleFn: function () {
+            var a = volumeOsd.audioObj;
+            if (!a)
+                return undefined;
+            return {
+                volume: a.volume ?? 0,
+                muted: !!a.muted
+            };
         }
     }
 
     onAudioReadyChanged: {
-        if (!audioReady) return
-        watcher.reset()
-        watcher.ingestSample()
+        if (!audioReady)
+            return;
+        watcher.reset();
+        watcher.ingestSample();
     }
 
     onAudioObjChanged: {
-        if (!volumeOsd.audioReady) return
-        watcher.reset()
-        watcher.ingestSample()
+        if (!volumeOsd.audioReady)
+            return;
+        watcher.reset();
+        watcher.ingestSample();
     }
 
     Connections {
         target: volumeOsd.audioObj
         ignoreUnknownSignals: true
 
-        function onVolumeChanged() { if (volumeOsd.audioReady) watcher.ingestSample() }
-        function onMutedChanged()  { if (volumeOsd.audioReady) watcher.ingestSample() }
+        function onVolumeChanged() {
+            if (volumeOsd.audioReady)
+                watcher.ingestSample();
+        }
+        function onMutedChanged() {
+            if (volumeOsd.audioReady)
+                watcher.ingestSample();
+        }
     }
 
     W.OsdWindow {
@@ -92,9 +105,7 @@ Scope {
         windowHeight: Config.volume.panelHeight
         windowColor: Config.volume.windowColor
 
-        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length)
-            ? Config.typography.textFontFamily
-            : Qt.application.font.family
+        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length) ? Config.typography.textFontFamily : Qt.application.font.family
 
         Rectangle {
             anchors.fill: parent
@@ -117,28 +128,36 @@ Scope {
                     icons: Config.volume.icons
 
                     state: {
-                        var s = watcher.current
-                        var v = volumeOsd.volume01()
+                        var s = watcher.current;
+                        var v = volumeOsd.volume01();
 
-                        if (s && s.muted) return "muted"
-                        if (v === 0) return "zero"
-                        if (v <= Config.volume.iconLowThreshold) return "low"
-                        if (v <= Config.volume.iconMediumThreshold) return "medium"
-                        return "high"
+                        if (s && s.muted)
+                            return "muted";
+                        if (v === 0)
+                            return "zero";
+                        if (v <= Config.volume.iconLowThreshold)
+                            return "low";
+                        if (v <= Config.volume.iconMediumThreshold)
+                            return "medium";
+                        return "high";
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            var a = volumeOsd.audioObj
-                            if (!a) return
+                            var a = volumeOsd.audioObj;
+                            if (!a)
+                                return;
+                            var nextMuted = !a.muted;
+                            a.muted = nextMuted;
 
-                            var nextMuted = !a.muted
-                            a.muted = nextMuted
-
-                            if (!volumeOsd.audioReady) return
-                            watcher.ingestOptimistic({ volume: volumeOsd.volume01(), muted: nextMuted })
+                            if (!volumeOsd.audioReady)
+                                return;
+                            watcher.ingestOptimistic({
+                                volume: volumeOsd.volume01(),
+                                muted: nextMuted
+                            });
                         }
                     }
                 }
@@ -158,14 +177,21 @@ Scope {
                     animEasing: Config.motion.fillEasing
 
                     value: volumeOsd.volume01()
-                    onUserChanged: function(newValue) {
-                        var a = volumeOsd.audioObj
-                        if (!a) return
-                        a.muted = false
-                        a.volume = newValue
+                    onUserChanged: function (newValue) {
+                        var a = volumeOsd.audioObj;
+                        if (!a)
+                            return;
+                        var shouldUnmute = newValue > a.volume;
+                        if (shouldUnmute)
+                            a.muted = false;
+                        a.volume = newValue;
 
-                        if (!volumeOsd.audioReady) return
-                        watcher.ingestOptimistic({ volume: newValue, muted: false })
+                        if (!volumeOsd.audioReady)
+                            return;
+                        watcher.ingestOptimistic({
+                            volume: newValue,
+                            muted: shouldUnmute ? false : a.muted
+                        });
                     }
                 }
 
@@ -186,6 +212,7 @@ Scope {
                     font.pixelSize: Config.volume.textFontSize
                     font.family: osdWin.textFamily
                     color: Config.theme.textColor
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }

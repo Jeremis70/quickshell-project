@@ -10,15 +10,15 @@ Scope {
     id: micOsd
 
     PwObjectTracker {
-        objects: [ Pipewire.defaultAudioSource ]
+        objects: [Pipewire.defaultAudioSource]
     }
 
     property bool audioReady: false
     property var audioObj: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio : null
 
     function volume01() {
-        var s = watcher.current
-        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0
+        var s = watcher.current;
+        return s ? ((s.volumeQ ?? 0) / 1000.0) : 0;
     }
 
     Timer {
@@ -32,39 +32,52 @@ Scope {
         id: watcher
         osdWindow: osdWin
 
-        normalizeFn: function(state) {
-            if (!state) return state
+        normalizeFn: function (state) {
+            if (!state)
+                return state;
             return {
                 volumeQ: Math.round((state.volume ?? 0) * 1000),
                 muted: !!state.muted
-            }
+            };
         }
 
-        sampleFn: function() {
-            var a = micOsd.audioObj
-            if (!a) return undefined
-            return { volume: a.volume ?? 0, muted: !!a.muted }
+        sampleFn: function () {
+            var a = micOsd.audioObj;
+            if (!a)
+                return undefined;
+            return {
+                volume: a.volume ?? 0,
+                muted: !!a.muted
+            };
         }
     }
 
     onAudioReadyChanged: {
-        if (!audioReady) return
-        watcher.reset()
-        watcher.ingestSample()
+        if (!audioReady)
+            return;
+        watcher.reset();
+        watcher.ingestSample();
     }
 
     onAudioObjChanged: {
-        if (!micOsd.audioReady) return
-        watcher.reset()
-        watcher.ingestSample()
+        if (!micOsd.audioReady)
+            return;
+        watcher.reset();
+        watcher.ingestSample();
     }
 
     Connections {
         target: micOsd.audioObj
         ignoreUnknownSignals: true
 
-        function onVolumeChanged() { if (micOsd.audioReady) watcher.ingestSample() }
-        function onMutedChanged()  { if (micOsd.audioReady) watcher.ingestSample() }
+        function onVolumeChanged() {
+            if (micOsd.audioReady)
+                watcher.ingestSample();
+        }
+        function onMutedChanged() {
+            if (micOsd.audioReady)
+                watcher.ingestSample();
+        }
     }
 
     W.OsdWindow {
@@ -91,9 +104,7 @@ Scope {
         windowHeight: Config.mic.panelHeight
         windowColor: Config.mic.windowColor
 
-        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length)
-            ? Config.typography.textFontFamily
-            : Qt.application.font.family
+        readonly property string textFamily: (Config.typography.textFontFamily && Config.typography.textFontFamily.length) ? Config.typography.textFontFamily : Qt.application.font.family
 
         Rectangle {
             anchors.fill: parent
@@ -115,23 +126,28 @@ Scope {
                     icons: Config.mic.icons
 
                     state: {
-                        var s = watcher.current
-                        if (!s) return "muted"
-                        return s.muted ? "muted" : "unmuted"
+                        var s = watcher.current;
+                        if (!s)
+                            return "muted";
+                        return s.muted ? "muted" : "unmuted";
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            var a = micOsd.audioObj
-                            if (!a) return
+                            var a = micOsd.audioObj;
+                            if (!a)
+                                return;
+                            var nextMuted = !a.muted;
+                            a.muted = nextMuted;
 
-                            var nextMuted = !a.muted
-                            a.muted = nextMuted
-
-                            if (!micOsd.audioReady) return
-                            watcher.ingestOptimistic({ volume: micOsd.volume01(), muted: nextMuted })
+                            if (!micOsd.audioReady)
+                                return;
+                            watcher.ingestOptimistic({
+                                volume: micOsd.volume01(),
+                                muted: nextMuted
+                            });
                         }
                     }
                 }
