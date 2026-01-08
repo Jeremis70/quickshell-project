@@ -19,6 +19,10 @@ Scope {
     property real sectionSpacing: 10
     property bool showSeparator: true
 
+    // Used to cap the overlay width: min(screenWidth * panelWidthRatio, panelMaxWidth)
+    property real panelWidthRatio: 0.80
+    property real panelMaxWidth: 1100
+
     property Component header: null
     property Component body: null
 
@@ -106,7 +110,7 @@ Scope {
                 radius: Config.theme.panelRadius
                 color: Config.theme.panelBg
 
-                implicitWidth: column.implicitWidth + overlay.panelPadding * 2
+                implicitWidth: column.width + overlay.panelPadding * 2
                 implicitHeight: column.implicitHeight + overlay.panelPadding * 2
 
                 border.width: 1
@@ -117,7 +121,13 @@ Scope {
                     property real headerTitleImplicitW: 0
                     property real headerIconW: 0
                     property real bodyIdealInnerW: 0
-                    property real panelInnerW: 0
+                    property real panelInnerW: {
+                        const maxWByRatio = win.sw * overlay.panelWidthRatio;
+                        const maxW = (overlay.panelMaxWidth > 0) ? Math.min(maxWByRatio, overlay.panelMaxWidth) : maxWByRatio;
+                        const headerW = headerLoader.item ? headerLoader.implicitWidth : 0;
+                        const bodyW = (ctx.bodyIdealInnerW > 0) ? ctx.bodyIdealInnerW : 0;
+                        return Math.min(maxW, Math.max(headerW, bodyW));
+                    }
                 }
 
                 Column {
@@ -125,11 +135,13 @@ Scope {
                     x: overlay.panelPadding
                     y: overlay.panelPadding
                     spacing: overlay.sectionSpacing
+                    width: ctx.panelInnerW
 
                     Loader {
                         id: headerLoader
                         sourceComponent: overlay.header
                         visible: overlay.header !== null
+                        width: ctx.panelInnerW
                         onLoaded: {
                             item.win = win;
                             item.overlay = overlay;
@@ -138,7 +150,7 @@ Scope {
                     }
 
                     Rectangle {
-                        width: Math.min(parent.width, 999999)
+                        width: ctx.panelInnerW
                         height: 1
                         color: Qt.rgba(Config.theme.textColor.r, Config.theme.textColor.g, Config.theme.textColor.b, 0.10)
                         visible: overlay.showSeparator && headerLoader.item
@@ -148,6 +160,7 @@ Scope {
                         id: bodyLoader
                         sourceComponent: overlay.body
                         visible: overlay.body !== null
+                        width: ctx.panelInnerW
                         onLoaded: {
                             item.win = win;
                             item.overlay = overlay;

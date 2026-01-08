@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Wayland
+import "."
 import "../config"
 
 Item {
@@ -40,11 +41,48 @@ Item {
     property real sourceWidth: 0
     property real sourceHeight: 0
 
-    readonly property var effectiveSourceItem: buildSource ? builtSource : sourceItem
+    // Optional wallpaper layer behind window previews (only used when buildSource=true)
+    property bool wallpaperEnabled: false
+    property url wallpaperSource: ""
+
+    // Per-window rounding (only used when buildSource=true)
+    property real windowRadius: Math.max(0, root.maskRadius - 4)
+
+    // Per-window borders (only used when buildSource=true)
+    // If activeWindowAddress is empty, we approximate "active" as the lowest focusHistoryID.
+    property bool highlightActiveWindow: false
+    property string activeWindowAddress: ""
+    property int windowBorderWidth: 1
+    property color activeWindowBorderColor: Config.theme.barFill
+    property color inactiveWindowBorderColor: Config.theme.panelBg
+
+    readonly property string effectiveActiveWindowAddress: {
+        if (!root.highlightActiveWindow)
+            return "";
+
+        const addr = (root.activeWindowAddress && typeof root.activeWindowAddress === "string") ? root.activeWindowAddress : "";
+        if (addr.length)
+            return addr;
+
+        const list = root.windowsModel ?? [];
+        let bestAddr = "";
+        let bestFh = Number.MAX_SAFE_INTEGER;
+        for (let i = 0; i < list.length; i++) {
+            const w = list[i];
+            const fh = (typeof w?.focusHistoryID === "number") ? w.focusHistoryID : Number.MAX_SAFE_INTEGER;
+            if (fh < bestFh) {
+                bestFh = fh;
+                bestAddr = (typeof w?.address === "string") ? w.address : "";
+            }
+        }
+        return bestAddr;
+    }
+
+    readonly property var effectiveSourceItem: buildSource ? builtCompositeSource : sourceItem
     readonly property rect effectiveSourceRect: buildSource ? Qt.rect(0, 0, 0, 0) : sourceRect
 
     Item {
-        id: builtSource
+        id: builtCompositeSource
         width: root.sourceWidth
         height: root.sourceHeight
         x: -100000
@@ -52,23 +90,61 @@ Item {
         visible: root.live
         clip: true
 
-        Repeater {
-            model: root.buildSource ? (root.windowsModel ?? []) : []
-            delegate: Item {
-                required property var modelData
-                property var windowData: modelData
-                property var toplevel: (root.toplevelForAddress && typeof root.toplevelForAddress === "function") ? root.toplevelForAddress(windowData?.address) : null
+        Image {
+            anchors.fill: parent
+            source: root.wallpaperSource
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            cache: true
+            visible: root.wallpaperEnabled && !!root.wallpaperSource
+        }
 
-                x: Math.round(SwitcherCommon.windowLocalX(windowData, root.monitorData) * root.previewScale)
-                y: Math.round(SwitcherCommon.windowLocalY(windowData, root.monitorData) * root.previewScale)
-                width: Math.max(1, Math.round((windowData?.size?.[0] ?? 1) * root.previewScale))
-                height: Math.max(1, Math.round((windowData?.size?.[1] ?? 1) * root.previewScale))
-                clip: true
+        Item {
+            id: builtSource
+            anchors.fill: parent
+            clip: true
 
-                ScreencopyView {
-                    anchors.fill: parent
-                    captureSource: (root.live && toplevel) ? toplevel : null
-                    live: root.live
+            Repeater {
+                model: root.buildSource ? (root.windowsModel ?? []) : []
+                delegate: Item {
+                    required property var modelData
+                    property var windowData: modelData
+                    property var toplevel: (root.toplevelForAddress && typeof root.toplevelForAddress === "function") ? root.toplevelForAddress(windowData?.address) : null
+
+                    readonly property string windowAddress: (typeof windowData?.address === "string") ? windowData.address : ""
+                    readonly property bool isActiveWindow: root.highlightActiveWindow && (windowAddress.length && root.effectiveActiveWindowAddress.length) ? (windowAddress === root.effectiveActiveWindowAddress) : false
+
+                    x: Math.round(SwitcherCommon.windowLocalX(windowData, root.monitorData) * root.previewScale)
+                    y: Math.round(SwitcherCommon.windowLocalY(windowData, root.monitorData) * root.previewScale)
+                    width: Math.max(1, Math.round((windowData?.size?.[0] ?? 1) * root.previewScale))
+                    height: Math.max(1, Math.round((windowData?.size?.[1] ?? 1) * root.previewScale))
+
+                    Item {
+                        id: windowSource
+                        anchors.fill: parent
+
+                        ScreencopyView {
+                            anchors.fill: parent
+                            captureSource: (root.live && toplevel) ? toplevel : null
+                            live: root.live
+                        }
+                    }
+
+                    RoundedMaskedPreview {
+                        anchors.fill: parent
+                        sourceItem: windowSource
+                        radius: root.windowRadius
+                        live: root.live
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        radius: root.windowRadius
+                        antialiasing: true
+                        border.width: root.windowBorderWidth
+                        border.color: isActiveWindow ? root.activeWindowBorderColor : root.inactiveWindowBorderColor
+                    }
                 }
             }
         }

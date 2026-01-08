@@ -65,6 +65,11 @@ QtObject {
         readonly property int barRadius: 20
     }
 
+    readonly property QtObject workspaceSwitcher: QtObject {
+        // Set to something like: "file:///home/you/Pictures/wallpaper.jpg"
+        property url wallpaperSource: "file:///home/jeremie/Pictures/Wallpapers/default/wall0.png"
+    }
+
     // ---------------------------
     // Per-OSD sections
     // ---------------------------
