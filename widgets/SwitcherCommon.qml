@@ -100,6 +100,37 @@ QtObject {
         return list;
     }
 
+    // Returns the visible workspaces in numeric id order (no MRU rotation).
+    function calculateActiveWorkspacesOrdered(workspaces, windowList, activeWorkspaceId, focusedMonitorId) {
+        const wsList = workspaces ?? [];
+        const windows = windowList ?? [];
+
+        const counts = ({});
+        for (let i = 0; i < windows.length; i++) {
+            const w = windows[i];
+            const wid = w?.workspace?.id ?? -1;
+            if (!(wid > 0))
+                continue;
+            if (typeof focusedMonitorId === "number" && w?.monitor !== focusedMonitorId)
+                continue;
+            counts[wid] = (counts[wid] ?? 0) + 1;
+        }
+
+        let list = [];
+        for (let i = 0; i < wsList.length; i++) {
+            const ws = wsList[i];
+            const id = ws?.id ?? -1;
+            if (!(id > 0))
+                continue;
+            const hasWindows = (counts[id] ?? 0) > 0;
+            if (hasWindows || id === activeWorkspaceId)
+                list.push(ws);
+        }
+
+        list.sort((a, b) => (a?.id ?? 0) - (b?.id ?? 0));
+        return list;
+    }
+
     // Returns windows for the active workspace, filtered to focused monitor (if provided),
     // sorted by focus history, then rotated so active window is index 0.
     function calculateWindowsInActiveWorkspace(windowList, activeWorkspaceId, focusedMonitorId, activeWindowAddress) {
@@ -137,6 +168,15 @@ QtObject {
         if (!address || typeof address !== "string")
             return;
         hyprland?.dispatch?.(`focuswindow address:${address}`);
+    }
+
+    function dispatchMoveWindowToWorkspace(hyprland, wsId, address, silent) {
+        if (!(wsId > 0))
+            return;
+        if (!address || typeof address !== "string")
+            return;
+        const cmd = silent ? "movetoworkspacesilent" : "movetoworkspace";
+        hyprland?.dispatch?.(`${cmd} ${wsId}, address:${address}`);
     }
 
     // Selection management utilities

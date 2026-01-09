@@ -68,6 +68,82 @@ QtObject {
     readonly property QtObject workspaceSwitcher: QtObject {
         // Set to something like: "file:///home/you/Pictures/wallpaper.jpg"
         property url wallpaperSource: "file:///home/jeremie/Pictures/Wallpapers/default/wall0.png"
+
+        // Workspace list mode
+        // - false: show only "active" workspaces (active + those with windows)
+        // - true: show 1..allWorkspacesCount
+        property bool showAllWorkspaces: false
+        property int allWorkspacesCount: 10
+
+        // Ordering when showAllWorkspaces=false
+        // - "mru": most-recently-used order (existing behavior)
+        // - "ordered": numeric workspace id order
+        property string activeWorkspaceOrder: "mru"
+
+        // Initial selection when the workspace list is ordered (showAllWorkspaces=true
+        // OR activeWorkspaceOrder="ordered"):
+        // - "current": start on the current/active workspace
+        // - "first": start on the first workspace in the list
+        property string orderedSelectionStart: "current"
+
+        // ---- Overlay layout ----
+        // Passed to SwitcherOverlay
+        property int panelPadding: 14
+        property int sectionSpacing: 10
+        property real panelWidthRatio: 0.80
+        property real panelMaxWidth: 1100
+
+        // ---- Tile layout ----
+        property int tileSpacing: 12
+        // Tile width is min(screenWidth * tileWidthRatio, tileMaxW), clamped by tileMinW
+        property real tileWidthRatio: 0.22
+        property int tileMaxW: 260
+        property int tileMinW: 140
+
+        // ---- Tile lift/zoom ----
+        property real hoveredScale: 1.020
+        property real selectedScale: 1.045
+        property int hoveredZ: 120
+        property int selectedZ: 200
+        property int zAnimMs: 90
+        property int scaleAnimMs: 120
+
+        // ---- Preview / borders ----
+        property color selectedBorderColor: root.theme.barFill
+        property color hoveredBorderColor: Qt.rgba(root.theme.textColor.r, root.theme.textColor.g, root.theme.textColor.b, 0.55)
+        property color normalBorderColor: Qt.rgba(root.theme.textColor.r, root.theme.textColor.g, root.theme.textColor.b, 0.18)
+        property int activeBorderWidth: 2
+        property int normalBorderWidth: 1
+
+        // Per-window styling inside previews
+        property real windowRadiusInset: 4
+        property real windowBorderWidth: 0.5
+        property color activeWindowBorderColor: root.theme.barFill
+        property color inactiveWindowBorderColor: root.theme.panelBg
+
+        // App icon overlay inside window previews
+        property int windowIconMinPx: 14
+        property real windowIconScale: 0.30
+
+        // Wallpaper layer behind window previews
+        property bool wallpaperEnabled: true
+
+        // ---- Drag & drop ----
+        property bool enableWindowDrag: true
+        property int dragThresholdPx: 10
+
+        // ---- Cycling (IPC next/prev) ----
+        // If true, the first `next()`/`prev()` that opens the switcher also advances once
+        // (classic Alt-Tab behavior). If false, it opens without changing the initial selection.
+        property bool cycleAdvanceOnOpen: true
+
+        // ---- Workspace number label (Alt mode) ----
+        property bool showWorkspaceNumberInAltMode: true
+        property int workspaceLabelFontSize: 14
+        property int workspaceLabelPadX: 7
+        property int workspaceLabelPadY: 4
+        property real workspaceLabelBgAlpha: 0.70
+        property real workspaceLabelBorderAlpha: 0.20
     }
 
     // ---------------------------

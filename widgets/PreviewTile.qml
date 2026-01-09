@@ -1,5 +1,7 @@
 import QtQuick
+import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import "."
 import "../config"
 
@@ -41,18 +43,26 @@ Item {
     property real sourceWidth: 0
     property real sourceHeight: 0
 
+    // Optional overlay: show app icons centered on each window (buildSource only)
+    property bool showWindowIcons: false
+
+    // Tuning for the per-window icon overlay (buildSource only)
+    property int windowIconMinPx: 14
+    property real windowIconScale: 0.30
+
     // Optional wallpaper layer behind window previews (only used when buildSource=true)
     property bool wallpaperEnabled: false
     property url wallpaperSource: ""
 
     // Per-window rounding (only used when buildSource=true)
-    property real windowRadius: Math.max(0, root.maskRadius - 4)
+    property real windowRadiusInset: 4
+    property real windowRadius: Math.max(0, root.maskRadius - root.windowRadiusInset)
 
     // Per-window borders (only used when buildSource=true)
     // If activeWindowAddress is empty, we approximate "active" as the lowest focusHistoryID.
     property bool highlightActiveWindow: false
     property string activeWindowAddress: ""
-    property int windowBorderWidth: 1
+    property real windowBorderWidth: 0.5
     property color activeWindowBorderColor: Config.theme.barFill
     property color inactiveWindowBorderColor: Config.theme.panelBg
 
@@ -111,6 +121,9 @@ Item {
                     property var windowData: modelData
                     property var toplevel: (root.toplevelForAddress && typeof root.toplevelForAddress === "function") ? root.toplevelForAddress(windowData?.address) : null
 
+                    property var desktopEntry: root.showWindowIcons ? DesktopEntries.heuristicLookup(windowData?.appId ?? windowData?.appid ?? windowData?.class ?? windowData?.initialClass) : null
+                    readonly property string windowIconKey: String(desktopEntry?.icon ?? "").trim()
+
                     readonly property string windowAddress: (typeof windowData?.address === "string") ? windowData.address : ""
                     readonly property bool isActiveWindow: root.highlightActiveWindow && (windowAddress.length && root.effectiveActiveWindowAddress.length) ? (windowAddress === root.effectiveActiveWindowAddress) : false
 
@@ -135,6 +148,17 @@ Item {
                         sourceItem: windowSource
                         radius: root.windowRadius
                         live: root.live
+                    }
+
+                    SmartIcon {
+                        anchors.centerIn: parent
+                        visible: root.showWindowIcons && windowIconKey.length > 0
+                        pixelSize: Math.round(Math.max(root.windowIconMinPx, Math.min(parent.width, parent.height) * root.windowIconScale))
+                        color: Config.theme.textColor
+                        state: "app-icon"
+                        icons: ({
+                                "app-icon": windowIconKey
+                            })
                     }
 
                     Rectangle {

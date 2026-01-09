@@ -15,6 +15,10 @@ Scope {
     property bool closeOnModifierRelease: false
     property int modifierMask: 0
 
+    // Live snapshot of currently held modifiers (from key events).
+    // Useful for secondary modes (e.g. show extra overlays when Alt is held).
+    property int currentModifiers: 0
+
     property real panelPadding: 14
     property real sectionSpacing: 10
     property bool showSeparator: true
@@ -28,6 +32,10 @@ Scope {
 
     signal cancelRequested
     signal commitRequested
+
+    // Forward raw key events to consumers (e.g. for toggle modes).
+    signal keyPressed(int key, int modifiers)
+    signal keyReleased(int key, int modifiers)
 
     Variants {
         id: variants
@@ -87,6 +95,8 @@ Scope {
                 focus: visible
 
                 Keys.onPressed: event => {
+                    overlay.currentModifiers = event.modifiers;
+                    overlay.keyPressed(event.key, event.modifiers);
                     if (event.key === Qt.Key_Escape) {
                         overlay.cancelRequested();
                         event.accepted = true;
@@ -94,6 +104,8 @@ Scope {
                 }
 
                 Keys.onReleased: event => {
+                    overlay.currentModifiers = event.modifiers;
+                    overlay.keyReleased(event.key, event.modifiers);
                     if (!overlay.closeOnModifierRelease)
                         return;
                     if (overlay.open && !(event.modifiers & overlay.modifierMask)) {

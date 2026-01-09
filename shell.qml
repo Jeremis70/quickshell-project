@@ -5,6 +5,7 @@ import "volume"
 import "brightness"
 import "task_switcher"
 import "workspace_switcher"
+import "hyprquickshot"
 
 Scope {
     VolumeOSD {}
@@ -14,4 +15,5 @@ Scope {
     KeyboardBacklightOSD {}
     TaskSwitcher {}
     WorkspaceSwitcher {}
+    HyprQuickshot {}
 }
