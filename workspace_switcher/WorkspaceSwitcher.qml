@@ -162,7 +162,7 @@ Scope {
 
     onOpenChanged: {
         if (open) {
-            altMode = false;
+            altMode = !!Config.workspaceSwitcher.altModeDefaultActive;
             draggingWindowAddress = "";
             draggingFromWorkspaceId = -1;
             draggingTargetWorkspaceId = -1;

@@ -6,8 +6,10 @@ import "brightness"
 import "task_switcher"
 import "workspace_switcher"
 import "hyprquickshot"
+import "launcher"
 
 Scope {
+    DesktopIndexerDebug {}
     VolumeOSD {}
     MicOSD {}
     PowerSourceOSD {}

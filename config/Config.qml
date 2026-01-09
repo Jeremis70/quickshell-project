@@ -137,6 +137,10 @@ QtObject {
         // (classic Alt-Tab behavior). If false, it opens without changing the initial selection.
         property bool cycleAdvanceOnOpen: true
 
+        // ---- Alt mode ----
+        // If true, the switcher opens with Alt mode enabled.
+        property bool altModeDefaultActive: true
+
         // ---- Workspace number label (Alt mode) ----
         property bool showWorkspaceNumberInAltMode: true
         property int workspaceLabelFontSize: 14
