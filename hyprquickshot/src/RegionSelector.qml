@@ -22,10 +22,47 @@ Item {
     property real targetWidth: 0
     property real targetHeight: 0
 
-    //Behavior on selectionX { SpringAnimation { spring: 4; damping: 0.4 } }
-    //Behavior on selectionY { SpringAnimation { spring: 4; damping: 0.4 } }
-    //Behavior on selectionHeight { SpringAnimation { spring: 4; damping: 0.4 } }
-    //Behavior on selectionWidth { SpringAnimation { spring: 4; damping: 0.4 } }
+    function resetSelection() {
+        root.startPos = Qt.point(0, 0);
+        root.selectionX = 0;
+        root.selectionY = 0;
+        root.selectionWidth = 0;
+        root.selectionHeight = 0;
+        root.targetX = 0;
+        root.targetY = 0;
+        root.targetWidth = 0;
+        root.targetHeight = 0;
+    }
+
+    onVisibleChanged: {
+        if (visible)
+            resetSelection();
+    }
+
+    //    Behavior on selectionX {
+    //        SpringAnimation {
+    //            spring: 4
+    //            damping: 0.4
+    //        }
+    //    }
+    //    Behavior on selectionY {
+    //        SpringAnimation {
+    //            spring: 4
+    //            damping: 0.4
+    //        }
+    //    }
+    //    Behavior on selectionHeight {
+    //        SpringAnimation {
+    //            spring: 4
+    //            damping: 0.4
+    //        }
+    //    }
+    //    Behavior on selectionWidth {
+    //        SpringAnimation {
+    //            spring: 4
+    //            damping: 0.4
+    //        }
+    //    }
 
     // Shader overlay
     ShaderEffect {

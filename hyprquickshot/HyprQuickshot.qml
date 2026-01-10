@@ -170,6 +170,10 @@ FreezeScreen {
         }
     }
 
+    function screenshotsDir() {
+        return (Quickshell.env("HQS_SCREENSHOTS_DIR") || Quickshell.env("XDG_SCREENSHOTS_DIR") || (Quickshell.env("XDG_PICTURES_DIR") ? Quickshell.env("XDG_PICTURES_DIR") + "/Screenshots" : null) || (Quickshell.env("HOME") + "/Pictures/Screenshots"));
+    }
+
     function processScreenshot(x, y, width, height) {
         const scale = hyprlandMonitor.scale;
         const scaledX = Math.round(x * scale);
@@ -177,8 +181,7 @@ FreezeScreen {
         const scaledWidth = Math.round(width * scale);
         const scaledHeight = Math.round(height * scale);
 
-        const picturesDir = Quickshell.env("HQS_DIR") || Quickshell.env("XDG_SCREENSHOTS_DIR") || Quickshell.env("XDG_PICTURES_DIR") || (Quickshell.env("HOME") + "/Pictures");
-
+        const picturesDir = screenshotsDir();
         const now = new Date();
         const timestamp = Qt.formatDateTime(now, "yyyy-MM-dd_hh-mm-ss");
 
