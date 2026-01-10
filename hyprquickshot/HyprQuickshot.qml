@@ -21,6 +21,7 @@ FreezeScreen {
     property bool waitingForMonitor: false
     property bool running: false
     property bool saveToDisk: true
+    property bool captureInProgress: false
 
     targetScreen: activeScreen
 
@@ -30,6 +31,8 @@ FreezeScreen {
     property string mode: "menu"
 
     function cleanupTempFiles(extraOutputPath) {
+        if (captureInProgress)
+            captureProcess.running = false;
         if (tempPath && tempPath.length)
             Quickshell.execDetached(["rm", "-f", tempPath]);
         if (extraOutputPath && String(extraOutputPath).length)
@@ -41,6 +44,9 @@ FreezeScreen {
         root.visible = false;
         root.waitingForMonitor = false;
         root.running = false;
+        root.captureInProgress = false;
+        if (captureProcess.running)
+            captureProcess.running = false;
         root.activeScreen = null;
         root.hyprlandMonitor = Hyprland.focusedMonitor;
         root.mode = "menu";
@@ -58,8 +64,11 @@ FreezeScreen {
                 const timestamp = Date.now();
                 const path = Quickshell.cachePath(`hqs-base-${timestamp}.png`);
                 tempPath = path;
-                Quickshell.execDetached(["grim", "-g", `${screen.x},${screen.y} ${screen.width}x${screen.height}`, path]);
-                showTimer.start();
+                captureProcess.command = ["grim", "-g", `${screen.x},${screen.y} ${screen.width}x${screen.height}`, path];
+                if (captureProcess.running)
+                    captureProcess.running = false;
+                root.captureInProgress = true;
+                captureProcess.running = true;
                 return true;
             }
         }
@@ -73,6 +82,7 @@ FreezeScreen {
 
         root.mode = (newMode && String(newMode).length) ? String(newMode) : "menu";
         root.running = true;
+        root.visible = false;
 
         const monitor = Hyprland.focusedMonitor;
         if (monitor) {
@@ -100,7 +110,7 @@ FreezeScreen {
 
     Shortcut {
         sequence: "Escape"
-        enabled: root.visible
+        enabled: root.running
         onActivated: () => {
             root.cleanupTempFiles();
             root.closeOverlay();
@@ -135,6 +145,32 @@ FreezeScreen {
             root.cleanupTempFiles();
             root.closeOverlay();
             root.canceled();
+        }
+    }
+
+    Process {
+        id: captureProcess
+        running: false
+
+        onExited: () => {
+            root.captureInProgress = false;
+            if (root.running)
+                showTimer.start();
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const s = (this.text ?? "").toString().trim();
+                if (s.length)
+                    console.log(s);
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const s = (this.text ?? "").toString().trim();
+                if (s.length)
+                    console.log(s);
+            }
         }
     }
 
