@@ -1,9 +1,102 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import Quickshell.Hyprland
 
 QtObject {
+    // --- Window label helpers ---
+    function _trimString(v) {
+        return (v === undefined || v === null) ? "" : String(v).trim();
+    }
+
+    // Splits a window title of the form "thing - process - app" or "thing — process — app".
+    // Returns an array of non-empty trimmed parts.
+    function windowTitleParts(windowData) {
+        const raw = _trimString(windowData?.title);
+        if (!raw.length)
+            return [];
+        const parts = raw.split(/\s+[-—–]\s+/g).map(p => _trimString(p)).filter(p => p.length);
+        return parts.length ? parts : [raw];
+    }
+
+    // Human-readable title for UI labels.
+    // Preference order:
+    // 1) First non-empty part of `title` (e.g. file/tab)
+    // 2) Second part (often process, e.g. nvim)
+    // 3) Third part (often terminal app, e.g. foot)
+    // 4) Raw title
+    // 5) initialTitle
+    // 6) class/appId
+    function bestWindowTitle(windowData) {
+        const parts = windowTitleParts(windowData);
+        if (parts.length >= 1 && parts[0].length)
+            return parts[0];
+        if (parts.length >= 2 && parts[1].length)
+            return parts[1];
+        if (parts.length >= 3 && parts[2].length)
+            return parts[2];
+
+        const raw = _trimString(windowData?.title);
+        if (raw.length)
+            return raw;
+
+        const initialTitle = _trimString(windowData?.initialTitle);
+        if (initialTitle.length)
+            return initialTitle;
+
+        const fallback = _trimString(windowData?.appId ?? windowData?.appid ?? windowData?.class ?? windowData?.initialClass);
+        return fallback;
+    }
+
+    // Attempts to choose a better desktop entry for a window.
+    // For terminals where the title encodes context (e.g. "hyprland.conf - nvim - foot"),
+    // this will try title parts first (in order), then fall back to appId/class.
+    function bestDesktopEntryForWindow(windowData) {
+        if (typeof DesktopEntries === "undefined" || !DesktopEntries?.heuristicLookup)
+            return null;
+
+        const candidates = [];
+        const parts = windowTitleParts(windowData);
+        for (let i = 0; i < parts.length; i++) {
+            const p = _trimString(parts[i]);
+            if (!p.length)
+                continue;
+            candidates.push(p);
+
+            // Try basename (in case of paths) and strip simple extensions.
+            const base = p.split("/").pop();
+            if (base && base !== p)
+                candidates.push(_trimString(base));
+            const noExt = base ? base.replace(/\.[A-Za-z0-9]{1,8}$/, "") : "";
+            if (noExt && noExt !== base)
+                candidates.push(_trimString(noExt));
+        }
+
+        // Standard fallbacks (current behavior)
+        const idFallback = _trimString(windowData?.appId ?? windowData?.appid ?? windowData?.class ?? windowData?.initialClass);
+        if (idFallback.length)
+            candidates.push(idFallback);
+
+        // De-dupe while preserving order
+        const seen = ({});
+        for (let i = 0; i < candidates.length; i++) {
+            const key = _trimString(candidates[i]);
+            if (!key.length)
+                continue;
+            const norm = key.toLowerCase();
+            if (seen[norm])
+                continue;
+            seen[norm] = true;
+
+            const entry = DesktopEntries.heuristicLookup(key);
+            if (entry)
+                return entry;
+        }
+
+        return null;
+    }
+
     // --- Workspace switcher helpers (generic, dependency-injected) ---
     function toplevelForAddress(toplevels, address) {
         if (!address || typeof address !== "string")

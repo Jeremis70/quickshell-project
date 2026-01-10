@@ -121,7 +121,7 @@ Item {
                     property var windowData: modelData
                     property var toplevel: (root.toplevelForAddress && typeof root.toplevelForAddress === "function") ? root.toplevelForAddress(windowData?.address) : null
 
-                    property var desktopEntry: root.showWindowIcons ? DesktopEntries.heuristicLookup(windowData?.appId ?? windowData?.appid ?? windowData?.class ?? windowData?.initialClass) : null
+                    property var desktopEntry: root.showWindowIcons ? (SwitcherCommon.bestDesktopEntryForWindow(windowData) ?? DesktopEntries.heuristicLookup(windowData?.appId ?? windowData?.appid ?? windowData?.class ?? windowData?.initialClass)) : null
                     readonly property string windowIconKey: String(desktopEntry?.icon ?? "").trim()
 
                     readonly property string windowAddress: (typeof windowData?.address === "string") ? windowData.address : ""

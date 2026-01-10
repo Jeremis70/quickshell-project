@@ -150,6 +150,12 @@ QtObject {
         property real workspaceLabelBorderAlpha: 0.20
     }
 
+    readonly property QtObject launcher: QtObject {
+        // Used for `desktop-indexer search --empty-mode ...` when the query is empty.
+        // Valid: "recency" | "frequency"
+        property string emptyMode: "recency"
+    }
+
     // ---------------------------
     // Per-OSD sections
     // ---------------------------

@@ -117,7 +117,7 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
 
                     property var currentWindow: taskSwitcher.hoveredWindow ?? taskSwitcher.selectedWindow
-                    property var entry: DesktopEntries.heuristicLookup(currentWindow?.appId ?? currentWindow?.appid ?? currentWindow?.class ?? currentWindow?.initialClass)
+                    property var entry: SwitcherCommon.bestDesktopEntryForWindow(currentWindow) ?? DesktopEntries.heuristicLookup(currentWindow?.appId ?? currentWindow?.appid ?? currentWindow?.class ?? currentWindow?.initialClass)
 
                     readonly property string iconKey: String(entry?.icon ?? "").trim()
                     visible: iconKey.length > 0
@@ -135,8 +135,7 @@ Scope {
                         if (taskSwitcher.windowCount <= 0)
                             return "";
                         const w = taskSwitcher.hoveredWindow ?? taskSwitcher.selectedWindow;
-                        const initialTitle = w?.initialTitle ?? "";
-                        return `${initialTitle ? `${initialTitle}` : ""}`;
+                        return SwitcherCommon.bestWindowTitle(w) ?? "";
                     }
                     color: Config.theme.textColor
                     font.family: (Config.typography.textFontFamily && Config.typography.textFontFamily.length) ? Config.typography.textFontFamily : Qt.application.font.family

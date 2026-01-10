@@ -9,7 +9,9 @@ import "hyprquickshot"
 import "launcher"
 
 Scope {
-    DesktopIndexerDebug {}
+    DesktopIndexerDaemon {}
+    Launcher {}
+
     VolumeOSD {}
     MicOSD {}
     PowerSourceOSD {}
