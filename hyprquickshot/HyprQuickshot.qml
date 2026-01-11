@@ -7,6 +7,8 @@ import Quickshell.Widgets
 import Quickshell.Io
 import QtCore
 
+import "../services"
+
 import "src"
 import "../widgets" as AppWidgets
 
@@ -79,6 +81,10 @@ FreezeScreen {
     function start(newMode) {
         if (root.running)
             return;
+
+        // Ensure we have up-to-date monitor/window geometry, especially when
+        // quickshell was launched early via Hyprland exec-once.
+        HyprlandData.updateAll();
 
         root.mode = (newMode && String(newMode).length) ? String(newMode) : "menu";
         root.running = true;

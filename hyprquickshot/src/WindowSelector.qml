@@ -1,12 +1,29 @@
 import QtQuick
 import Quickshell.Hyprland
+import "../../services"
 
 Item {
     id: root
 
     property var monitor: Hyprland.focusedMonitor
     property var workspace: monitor?.activeWorkspace
-    property var windows: workspace?.toplevels ?? []
+
+    // Prefer Quickshell.Hyprland toplevels when available, but fall back to
+    // HyprlandData (hyprctl) because early-session startup can leave monitor
+    // geometry / toplevel lists temporarily incomplete when quickshell is
+    // launched via Hyprland exec-once.
+    property var windows: {
+        const ws = root.workspace;
+        const toplevels = ws?.toplevels;
+        if (toplevels && toplevels.length)
+            return toplevels;
+
+        const list = HyprlandData.windowList ?? [];
+        const wsId = ws?.id ?? HyprlandData.activeWorkspace?.id;
+        const monId = root.monitor?.id ?? root.monitor?.lastIpcObject?.id;
+
+        return list.filter(w => (w?.mapped ?? true) && !(w?.hidden ?? false)).filter(w => (typeof wsId === "number") ? ((w?.workspace?.id ?? -1) === wsId) : true).filter(w => (typeof monId === "number") ? ((w?.monitor ?? -1) === monId) : true);
+    }
 
     signal checkHover(real mouseX, real mouseY)
     signal regionSelected(real x, real y, real width, real height)
@@ -84,9 +101,34 @@ Item {
             Connections {
                 target: root
 
+                function monitorOffset() {
+                    const ipcMon = root.monitor?.lastIpcObject;
+                    if (typeof ipcMon?.x === "number" && typeof ipcMon?.y === "number")
+                        return Qt.point(ipcMon.x, ipcMon.y);
+
+                    const monId = root.monitor?.id ?? ipcMon?.id;
+                    const monName = root.monitor?.name ?? ipcMon?.name;
+                    const mons = HyprlandData.monitors ?? [];
+                    for (let i = 0; i < mons.length; i++) {
+                        const m = mons[i];
+                        if ((typeof monId === "number" && m?.id === monId) || (monName && m?.name === monName)) {
+                            if (typeof m?.x === "number" && typeof m?.y === "number")
+                                return Qt.point(m.x, m.y);
+                        }
+                    }
+
+                    const mx = root.monitor?.x;
+                    const my = root.monitor?.y;
+                    if (typeof mx === "number" && typeof my === "number")
+                        return Qt.point(mx, my);
+
+                    return Qt.point(0, 0);
+                }
+
                 function onCheckHover(mouseX, mouseY) {
-                    const monitorX = root.monitor?.x ?? root.monitor?.lastIpcObject?.x ?? 0;
-                    const monitorY = root.monitor?.y ?? root.monitor?.lastIpcObject?.y ?? 0;
+                    const off = monitorOffset();
+                    const monitorX = off.x;
+                    const monitorY = off.y;
 
                     const at = modelData?.at ?? modelData?.lastIpcObject?.at;
                     const size = modelData?.size ?? modelData?.lastIpcObject?.size;
