@@ -29,6 +29,8 @@ FreezeScreen {
 
     property var hyprlandMonitor: Hyprland.focusedMonitor
     property string tempPath: ""
+    property string pendingOutputPath: ""
+    property bool pendingDeleteOutputAfterCopy: false
     // "menu" shows the chooser buttons without enabling a selector.
     property string mode: "menu"
 
@@ -66,7 +68,7 @@ FreezeScreen {
                 const timestamp = Date.now();
                 const path = Quickshell.cachePath(`hqs-base-${timestamp}.png`);
                 tempPath = path;
-                captureProcess.command = ["grim", "-g", `${screen.x},${screen.y} ${screen.width}x${screen.height}`, path];
+                captureProcess.command = ["hqs", "capture", "-g", `${screen.x},${screen.y} ${screen.width}x${screen.height}`, path];
                 if (captureProcess.running)
                     captureProcess.running = false;
                 root.captureInProgress = true;
@@ -200,8 +202,22 @@ FreezeScreen {
         running: false
 
         onExited: () => {
-            root.closeOverlay();
-            root.finished();
+            // screenshotProcess runs `hqs finalize`. After it exits, copy the
+            // final image to clipboard (like the old wl-copy step) and do any
+            // remaining cleanup.
+            if (!root.pendingOutputPath || !root.pendingOutputPath.length) {
+                root.closeOverlay();
+                root.finished();
+                return;
+            }
+
+            if (copyProcess.running)
+                copyProcess.running = false;
+
+            // Copy the file to clipboard without using a shell.
+            // `hqs copy-file` streams the file into wl-copy's stdin.
+            copyProcess.command = ["hqs", "copy-file", "--type", "image/png", root.pendingOutputPath];
+            copyProcess.running = true;
         }
 
         stdout: StdioCollector {
@@ -209,6 +225,41 @@ FreezeScreen {
         }
         stderr: StdioCollector {
             onStreamFinished: console.log(this.text)
+        }
+    }
+
+    Process {
+        id: copyProcess
+        running: false
+
+        onExited: () => {
+            if (root.tempPath && root.tempPath.length)
+                Quickshell.execDetached(["rm", "-f", root.tempPath]);
+            root.tempPath = "";
+
+            if (root.pendingDeleteOutputAfterCopy && root.pendingOutputPath && root.pendingOutputPath.length)
+                Quickshell.execDetached(["rm", "-f", root.pendingOutputPath]);
+
+            root.pendingOutputPath = "";
+            root.pendingDeleteOutputAfterCopy = false;
+
+            root.closeOverlay();
+            root.finished();
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const s = (this.text ?? "").toString().trim();
+                if (s.length)
+                    console.log(s);
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const s = (this.text ?? "").toString().trim();
+                if (s.length)
+                    console.log(s);
+            }
         }
     }
 
@@ -228,9 +279,11 @@ FreezeScreen {
         const timestamp = Qt.formatDateTime(now, "yyyy-MM-dd_hh-mm-ss");
 
         const outputPath = root.saveToDisk ? `${picturesDir}/screenshot-${timestamp}.png` : Quickshell.cachePath(`hqs-crop-${timestamp}.png`);
-        const cleanupCmd = root.saveToDisk ? `rm \"${tempPath}\"` : `rm \"${tempPath}\" \"${outputPath}\"`;
 
-        screenshotProcess.command = ["sh", "-c", `magick "${tempPath}" -crop ${scaledWidth}x${scaledHeight}+${scaledX}+${scaledY} "${outputPath}" && ` + `wl-copy < "${outputPath}" && ` + `${cleanupCmd}`];
+        root.pendingOutputPath = outputPath;
+        root.pendingDeleteOutputAfterCopy = !root.saveToDisk;
+
+        screenshotProcess.command = ["hqs", "finalize", "--base", `${tempPath}`, "--crop-px", `${scaledX}`, `${scaledY}`, `${scaledWidth}`, `${scaledHeight}`, "--delete-base", `${outputPath}`];
 
         screenshotProcess.running = true;
         root.visible = false;
