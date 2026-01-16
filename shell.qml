@@ -7,6 +7,7 @@ import "task_switcher"
 import "workspace_switcher"
 import "hyprquickshot"
 import "launcher"
+import "copypanel"
 
 Scope {
     DesktopIndexerDaemon {}
@@ -17,7 +18,11 @@ Scope {
     PowerSourceOSD {}
     BrightnessOSD {}
     KeyboardBacklightOSD {}
+
     TaskSwitcher {}
     WorkspaceSwitcher {}
+
     HyprQuickshot {}
+
+    CopyPanel {}
 }

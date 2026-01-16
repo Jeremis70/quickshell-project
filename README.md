@@ -27,10 +27,6 @@ From this folder:
 
 - `qs` (or your usual QuickShell entrypoint)
 
-If you want to run a specific entry file:
-
-- `qs -c shell.qml`
-
 ## Structure
 
 - `shell.qml`: main entrypoint
